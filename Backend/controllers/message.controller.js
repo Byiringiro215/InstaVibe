@@ -2,7 +2,8 @@
 import mongoose from "mongoose";
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
-
+import { getReceiverSocketId } from "../Socket/socket.js";
+import{io} from "../Socket/socket.js";
  
  export const sendMessage=async (req,res)=>{
    try {
@@ -29,13 +30,19 @@ if (newMessage) {
     conversation.messages.push(newMessage._id)
 }
 
-//SOCKET IO FUNCTIONALITY WILL GO HERE
-
-
 // await conversation.save();
 // await newMessage.save();
 //run in parallel
 await Promise.all([conversation.save(),newMessage.save()]);
+
+//SOCKET IO FUNCTIONALITY WILL GO HERE
+const receiverSocketId=getReceiverSocketId(receiverId);
+if (receiverSocketId) {
+    //io.to(<socket_id>).emit() used to emit events to a specific client
+    io.to(receiverSocketId).emit("newMessage",newMessage);
+}
+
+
 
    res.status(201).json(newMessage) 
    } catch (error) {
@@ -45,6 +52,7 @@ await Promise.all([conversation.save(),newMessage.save()]);
  }
 
  export const getMessages=async(req,res)=>{
+    console.log("getMessages route hit with ID:", req.params.id);
     try {
         const {id:userToChatId}=req.params;
         const senderId=req.user._id;
@@ -52,10 +60,11 @@ await Promise.all([conversation.save(),newMessage.save()]);
             partcipants:{$all:[senderId,userToChatId]},
         }).populate("messages");//not the reference but the actual message
 
-    
+        console.log("Found conversation:", conversation);
 if (!conversation) {
-   
+  
     return res.status(404).json({error:"Conversation not found"});
+   
 }
 
 const messages=conversation.messages;

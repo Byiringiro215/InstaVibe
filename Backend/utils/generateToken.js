@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken'
     res.cookie("jwt",token,{
         maxAge:15*24*60*60*1000,//this is to convert in milliseconds
         httpOnly:true,//prevent xss attacks(cross site scripting attacks)
-        sameSite:"strict",//CSRF attacks cross site request forgery attacks
+        sameSite:"Strict",//CSRF attacks cross site request forgery attacks
        secure:process.env.NODE_ENV !=="development"
     });
  }
